@@ -154,6 +154,15 @@ class PuppetLint
       raise PuppetLint::NoCodeError
     end
 
+    checklist = { :token => Array.new, :line => Array.new, :unknown => Array.new }
+    PuppetLint::CheckPlugin.repository.each do |plugin|
+      checks = plugin.new.checklist
+      checklist.keys.each do |key|
+        checklist[key] += checks[key] unless checks[key].nil?
+      end
+    end
+    p checklist
+
     PuppetLint::CheckPlugin.repository.each do |plugin|
       report plugin.new.run(@fileinfo, @data)
     end

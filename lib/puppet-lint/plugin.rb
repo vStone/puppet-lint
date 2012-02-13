@@ -53,6 +53,29 @@ class PuppetLint::CheckPlugin
     message_hash
   end
 
+
+  def checklist
+    checklist = { :token => Array.new, :line => Array.new, :unknown => Array.new }
+
+    self.public_methods.select { |method|
+      method.to_s =~ /^lint_(line|token)_check_(.*)/
+    }.each { |method|
+      method =~ /^lint_(line|token)_check_(.*)/
+      name = Regexp.last_match(2)
+      if PuppetLint.configuration.send("#{name}_enabled?")
+        case Regexp.last_match(1)
+        when "line"; checklist[:line] << name
+        when "token"; checklist[:token] << name
+        else
+          checklist[:unknown] << name
+        end
+      end
+      #@default_info[:check] = name
+      self.send(method) if PuppetLint.configuration.send("#{name}_enabled?")
+    }
+    checklist
+  end
+
   def run(fileinfo, data)
     lexer = Puppet::Parser::Lexer.new
     lexer.string = data
@@ -157,6 +180,16 @@ class PuppetLint::CheckPlugin
   def self.check(name, &b)
     PuppetLint.configuration.add_check name
     define_method("lint_check_#{name}", b)
+  end
+
+  def self.line_check(name, &b)
+    PuppetLint.configuration.add_check name
+    define_method("lint_line_check_#{name}", b)
+  end
+
+  def self.token_check(name, &b)
+    PuppetLint.configuration.add_check name
+    define_method("lint_token_check_#{name}", b)
   end
 end
 
