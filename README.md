@@ -96,13 +96,13 @@ this can lead to confusion.
 
 Bad:
 
-```
+```puppet
 Service['httpd'] <- Package['httpd']
 ```
 
 Good:
 
-```
+```puppet
 Package['httpd'] -> Service['httpd']
 ```
 
@@ -133,13 +133,13 @@ values).
 
 Bad:
 
-```
+```puppet
 class foo($bar='baz', $gronk) {
 ```
 
 Good:
 
-```
+```puppet
 class foo($gronk, $bar='baz') {
 ```
 
@@ -185,11 +185,89 @@ Placeholder
 
 ### double_quoted_strings
 
-Placeholder
+When a string contains no variables, it should be put between single quotes. This is to avoid confusion and
+mistakes with parameters.
+In some cases, where this makes escaping quotes difficult, you should consider using a template as alternative.
+
+
+Bad:
+```puppet
+$my_variable = "A simple string"
+
+file {"filename":
+}
+```
+
+Good:
+```puppet
+$my_variable = 'A simple string'
+
+file {'filename':
+}
+
+```
 
 ### only_variable_string
 
-Placeholder
+The defined string contains only of a single variable. These should, as a rule, not be quoted.
+
+Bad:
+
+```puppet
+file {"$filename":
+}
+```
+
+Good:
+```puppet
+file {$filename:
+}
+```
+When a variable is enclosed in double quotes, puppet will convert it into an string for you.
+Sometimes, this may produce undesired effects.
+
+Example class which might produce problems:
+```puppet
+class foo ($param) {
+  if $param {
+    notify {'do something': }
+  }
+}
+```
+
+Bad:
+```puppet
+$param_value = false
+class {'foo':
+  param => "$param_value",
+}
+
+```
+
+This will not work as expected because puppet converts the boolean into a string which resolves to true:
+```
+Notice: do something
+```
+
+Good:
+```puppet
+$param_value = false
+class {'foo':
+  param => $param_value,
+}
+```
+
+This produces nothing (as expected).
+
+A similar problem exists when the variable is an array.
+
+```puppet
+$var = ['/tmp/one','/tmp/two']
+file {"$var":}
+```
+
+In this case, puppet will try to create the file '/tmpone/tmp/who'.
+
 
 ### variables_not_enclosed
 
